@@ -131,14 +131,57 @@ class Product {
   }
 
   static async create(productData) {
-    const { name, description, price, quantity, categoryId, imageUrl, createdBy } = productData;
+    const { 
+      name, 
+      description, 
+      short_description,
+      price, 
+      regular_price,
+      quantity, 
+      categoryId, 
+      brand,
+      sku,
+      imageUrl,
+      free_shipping,
+      shipping_time,
+      warranty_period,
+      eco_friendly,
+      eco_friendly_details,
+      tags,
+      is_featured,
+      status,
+      createdBy 
+    } = productData;
     
     try {
       const [result] = await pool.execute(
         `INSERT INTO Products 
-         (name, description, price, quantity, category_id, image_url, created_by) 
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [name, description, price, quantity, categoryId, imageUrl, createdBy]
+         (name, description, short_description, price, regular_price, quantity, 
+          category_id, brand, sku, image_url, free_shipping, shipping_time, 
+          warranty_period, eco_friendly, eco_friendly_details, tags, 
+          is_featured, status, created_by) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          name, 
+          description, 
+          short_description,
+          price, 
+          regular_price || price, 
+          quantity || 0, 
+          categoryId, 
+          brand || 'GreenMagic', 
+          sku || `GM-${Date.now()}`, 
+          imageUrl, 
+          free_shipping ? 1 : 0, 
+          shipping_time || '3-5 business days', 
+          warranty_period || null, 
+          eco_friendly ? 1 : 0, 
+          eco_friendly_details || 'Eco-friendly packaging', 
+          tags || '', 
+          is_featured ? 1 : 0, 
+          status || 'active', 
+          createdBy
+        ]
       );
       
       return {
@@ -146,6 +189,7 @@ class Product {
         ...productData
       };
     } catch (error) {
+      console.error('Error in Product.create:', error);
       throw error;
     }
   }

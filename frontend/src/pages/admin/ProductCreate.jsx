@@ -127,6 +127,8 @@ const ProductCreate = () => {
       
       setSuccessMessage('Product created successfully!');
       setLoading(false); 
+      
+      // Use setTimeout to delay the redirect
       setTimeout(() => {
         navigate('/admin/products', { 
           state: { message: 'Product created successfully' } 
@@ -684,29 +686,29 @@ const ProductCreate = () => {
       <div className="bg-white shadow-md rounded-lg p-6">
         {renderStepIndicator()}
         
-        <form onSubmit={handleSubmit}>
-          {renderStepForm()}
-          
-          <div className="mt-8 pt-5 border-t border-gray-200 flex justify-between">
-            {currentStep > 1 && (
-              <button
-                type="button"
-                onClick={prevStep}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
-              >
-                Previous
-              </button>
-            )}
+        {currentStep < 5 ? (
+          <div>
+            {renderStepForm()}
             
-            <div className="flex justify-end">
-              <Link
-                to="/admin/products"
-                className="px-4 py-2 mr-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
-              >
-                Cancel
-              </Link>
+            <div className="mt-8 pt-5 border-t border-gray-200 flex justify-between">
+              {currentStep > 1 && (
+                <button
+                  type="button"
+                  onClick={prevStep}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+                >
+                  Previous
+                </button>
+              )}
               
-              {currentStep < 5 ? (
+              <div className="flex justify-end">
+                <Link
+                  to="/admin/products"
+                  className="px-4 py-2 mr-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </Link>
+                
                 <button
                   type="button"
                   onClick={nextStep}
@@ -714,7 +716,30 @@ const ProductCreate = () => {
                 >
                   Next
                 </button>
-              ) : (
+              </div>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            {renderStepForm()}
+            
+            <div className="mt-8 pt-5 border-t border-gray-200 flex justify-between">
+              <button
+                type="button"
+                onClick={prevStep}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+              >
+                Previous
+              </button>
+              
+              <div className="flex justify-end">
+                <Link
+                  to="/admin/products"
+                  className="px-4 py-2 mr-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </Link>
+                
                 <button
                   type="submit"
                   disabled={loading}
@@ -724,10 +749,10 @@ const ProductCreate = () => {
                 >
                   {loading ? 'Creating...' : 'Create Product'}
                 </button>
-              )}
+              </div>
             </div>
-          </div>
-        </form>
+          </form>
+        )}
       </div>
     </div>
   );
