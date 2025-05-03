@@ -135,6 +135,114 @@ export const getUserActivity = async (userId) => {
   }
 };
 
+// Categories
+export const getAllCategories = async () => {
+  try {
+    const response = await api.get('/categories');
+    return response.data;
+  } catch (error) {
+    throw handleError(error);
+  }
+};
+
+export const getCategory = async (categoryId) => {
+  try {
+    const response = await api.get(`/categories/${categoryId}`);
+    return response.data;
+  } catch (error) {
+    throw handleError(error);
+  }
+};
+
+export const createCategory = async (categoryData) => {
+  try {
+    const response = await api.post('/categories', categoryData);
+    return response.data;
+  } catch (error) {
+    throw handleError(error);
+  }
+};
+
+export const updateCategory = async (categoryId, categoryData) => {
+  try {
+    const response = await api.put(`/categories/${categoryId}`, categoryData);
+    return response.data;
+  } catch (error) {
+    throw handleError(error);
+  }
+};
+
+export const deleteCategory = async (categoryId) => {
+  try {
+    const response = await api.delete(`/categories/${categoryId}`);
+    return response.data;
+  } catch (error) {
+    throw handleError(error);
+  }
+};
+
+// Products
+export const getAllProducts = async (params = {}) => {
+  try {
+    const response = await api.get('/products', { params });
+    return response.data;
+  } catch (error) {
+    throw handleError(error);
+  }
+};
+
+export const getProduct = async (productId) => {
+  try {
+    const response = await api.get(`/products/${productId}`);
+    return response.data;
+  } catch (error) {
+    throw handleError(error);
+  }
+};
+
+export const createProduct = async (productData) => {
+  try {
+    const response = await api.post('/products', productData);
+    return response.data;
+  } catch (error) {
+    throw handleError(error);
+  }
+};
+
+export const updateProduct = async (productId, productData) => {
+  try {
+    const response = await api.put(`/products/${productId}`, productData);
+    return response.data;
+  } catch (error) {
+    throw handleError(error);
+  }
+};
+
+export const deleteProduct = async (productId) => {
+  try {
+    const response = await api.delete(`/products/${productId}`);
+    return response.data;
+  } catch (error) {
+    throw handleError(error);
+  }
+};
+
+export const uploadProductImage = async (productId, imageFile) => {
+  try {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    
+    const response = await api.post(`/products/${productId}/upload-image`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    throw handleError(error);
+  }
+};
+
 // Roles
 export const getAllRoles = async () => {
   try {

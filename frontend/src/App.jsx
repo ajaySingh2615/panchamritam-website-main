@@ -32,6 +32,13 @@ import UsersList from './pages/admin/UsersList';
 import UserDetail from './pages/admin/UserDetail';
 import UserEdit from './pages/admin/UserEdit';
 import UserCreate from './pages/admin/UserCreate';
+import CategoriesList from './pages/admin/CategoriesList';
+import CategoryCreate from './pages/admin/CategoryCreate';
+import CategoryEdit from './pages/admin/CategoryEdit';
+import ProductsList from './pages/admin/ProductsList';
+import ProductCreate from './pages/admin/ProductCreate';
+import ProductDetail from './pages/admin/ProductDetail';
+import ProductEdit from './pages/admin/ProductEdit';
 
 import './App.css';
 
@@ -71,11 +78,23 @@ const App = () => {
               }
             >
               <Route index element={<AdminDashboard />} />
+              
+              {/* User Routes */}
               <Route path="users" element={<UsersList />} />
               <Route path="users/create" element={<UserCreate />} />
               <Route path="users/:userId" element={<UserDetail />} />
               <Route path="users/:userId/edit" element={<UserEdit />} />
-              {/* Add more admin routes as needed */}
+              
+              {/* Category Routes */}
+              <Route path="categories" element={<CategoriesList />} />
+              <Route path="categories/create" element={<CategoryCreate />} />
+              <Route path="categories/:categoryId/edit" element={<CategoryEdit />} />
+              
+              {/* Product Routes */}
+              <Route path="products" element={<ProductsList />} />
+              <Route path="products/create" element={<ProductCreate />} />
+              <Route path="products/:productId" element={<ProductDetail />} />
+              <Route path="products/:productId/edit" element={<ProductEdit />} />
             </Route>
             
             {/* Public Routes with Main Layout */}
