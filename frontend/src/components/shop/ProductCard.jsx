@@ -49,7 +49,7 @@ const ProductCard = ({ product, onAddToCart }) => {
   const isOnSale = product.regular_price && parseFloat(product.regular_price) > parseFloat(product.price);
 
   return (
-    <div className="product-card bg-white rounded-lg shadow-md overflow-hidden group relative">
+    <div className="product-card bg-[#f8f6f3] rounded-lg shadow-md overflow-hidden group relative">
       {/* Sale badge */}
       {isOnSale && <div className="sale-badge">Sale!</div>}
       
@@ -73,7 +73,7 @@ const ProductCard = ({ product, onAddToCart }) => {
             {product.category_name || 'Uncategorized'}
           </div>
           
-          <h3 className="product-title text-gray-800 font-bold text-lg mb-2 group-hover:text-indigo-600 transition duration-300">
+          <h3 className="product-title text-gray-800 font-bold text-lg mb-2 group-hover:text-[#9bc948] transition duration-300">
             {product.name}
           </h3>
           
@@ -89,12 +89,12 @@ const ProductCard = ({ product, onAddToCart }) => {
                 <span className="text-gray-400 line-through text-sm mr-2">
                   £{formatPrice(product.regular_price)}
                 </span>
-                <span className="text-indigo-600 font-bold text-lg">
+                <span className="text-[#9bc948] font-bold text-lg">
                   £{formatPrice(product.price)}
                 </span>
               </div>
             ) : (
-              <span className="text-indigo-600 font-bold text-lg">
+              <span className="text-[#9bc948] font-bold text-lg">
                 £{formatPrice(product.price)}
               </span>
             )}
@@ -102,7 +102,7 @@ const ProductCard = ({ product, onAddToCart }) => {
           
           <button 
             onClick={handleAddToCart}
-            className="bg-indigo-500 text-white p-2 rounded-full hover:bg-indigo-600 transition duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
+            className="bg-[#9bc948] text-white p-2 rounded-full hover:bg-[#8ab938] transition duration-300 focus:outline-none focus:ring-2 focus:ring-[#9bc948] focus:ring-opacity-50"
             aria-label="Add to cart"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

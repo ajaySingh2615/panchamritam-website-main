@@ -57,14 +57,14 @@ const PriceRangeSlider = ({ minPrice = 0, maxPrice = 1000, initialMin = 15, init
   const maxThumbPosition = ((max - minPrice) / (maxPrice - minPrice)) * 100;
 
   return (
-    <div className="w-full mb-6">
+    <div className="w-full mb-4 text-left pl-0 ml-0">
       <div 
         ref={sliderRef}
-        className="relative h-2 bg-indigo-200 rounded-full mt-6 mb-8"
+        className="relative h-2 bg-gray-200 rounded-full my-5 ml-0 pl-0"
       >
         {/* Active Range Track */}
         <div
-          className="absolute h-2 bg-indigo-600 rounded-full"
+          className="absolute h-2 bg-[#9bc948] rounded-full"
           style={{
             left: `${minThumbPosition}%`,
             width: `${maxThumbPosition - minThumbPosition}%`
@@ -73,7 +73,7 @@ const PriceRangeSlider = ({ minPrice = 0, maxPrice = 1000, initialMin = 15, init
         
         {/* Min Thumb */}
         <div
-          className={`absolute w-5 h-5 bg-white rounded-full shadow-md -mt-1.5 transform -translate-x-1/2 cursor-pointer flex items-center justify-center border-2 ${isDraggingMin ? 'border-indigo-600 z-20' : 'border-indigo-400 z-10'}`}
+          className={`absolute w-5 h-5 bg-[#9bc948] rounded-full shadow-md -mt-1.5 transform -translate-x-1/2 cursor-pointer flex items-center justify-center`}
           style={{ left: `${minThumbPosition}%` }}
           onMouseDown={() => setIsDraggingMin(true)}
           role="slider"
@@ -85,7 +85,7 @@ const PriceRangeSlider = ({ minPrice = 0, maxPrice = 1000, initialMin = 15, init
         
         {/* Max Thumb */}
         <div
-          className={`absolute w-5 h-5 bg-white rounded-full shadow-md -mt-1.5 transform -translate-x-1/2 cursor-pointer flex items-center justify-center border-2 ${isDraggingMax ? 'border-indigo-600 z-20' : 'border-indigo-400 z-10'}`}
+          className={`absolute w-5 h-5 bg-[#9bc948] rounded-full shadow-md -mt-1.5 transform -translate-x-1/2 cursor-pointer flex items-center justify-center`}
           style={{ left: `${maxThumbPosition}%` }}
           onMouseDown={() => setIsDraggingMax(true)}
           role="slider"
@@ -96,22 +96,16 @@ const PriceRangeSlider = ({ minPrice = 0, maxPrice = 1000, initialMin = 15, init
         ></div>
       </div>
       
-      <div className="flex justify-between">
-        <div className="w-1/2 pr-2">
-          <input 
-            type="text" 
-            value={`£${min}`}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-700 text-center"
-            readOnly
-          />
+      <div className="flex gap-3 ml-0 pl-0">
+        <div className="ml-0 pl-0 pr-2">
+          <div className="border border-gray-300 rounded py-2 px-2 text-left bg-white">
+            £{min}
+          </div>
         </div>
-        <div className="w-1/2 pl-2">
-          <input 
-            type="text" 
-            value={`£${max}`}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-700 text-center"
-            readOnly
-          />
+        <div className="pl-0">
+          <div className="border border-gray-300 rounded py-2 px-2 text-left bg-white">
+            £{max}
+          </div>
         </div>
       </div>
     </div>

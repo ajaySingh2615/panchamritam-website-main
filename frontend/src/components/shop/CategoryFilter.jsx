@@ -2,30 +2,37 @@ import React from 'react';
 
 const CategoryFilter = ({ categories, selectedCategory, onCategoryChange, totalProducts }) => {
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-xl font-bold text-gray-800 mb-6">Categories</h2>
-      <ul className="space-y-3">
-        <li>
+    <div className="bg-[#f8f6f3] rounded pl-0 pr-5 pt-5 pb-5 text-left">
+      <ul className="space-y-2 pl-0 ml-0">
+        <li className="pl-0 ml-0">
           <button 
             onClick={() => onCategoryChange(null)}
-            className={`flex justify-between w-full text-left py-2 px-3 rounded ${!selectedCategory ? 'bg-indigo-100 text-indigo-800' : 'text-gray-700 hover:bg-gray-100'}`}
+            className={`w-full text-left py-2 px-3 rounded ${!selectedCategory ? 'bg-[#9bc948] text-white' : 'text-gray-700 hover:bg-gray-100'}`}
           >
-            <span>All Products</span>
-            <span className="bg-gray-200 text-gray-700 px-2 rounded-full text-sm">
-              {totalProducts}
-            </span>
+            {!selectedCategory ? (
+              <>All Products ({totalProducts})</>
+            ) : (
+              <>
+                <span className="text-[#9bc948]">All Products</span>
+                <span className="text-gray-800"> ({totalProducts})</span>
+              </>
+            )}
           </button>
         </li>
         {categories.map(category => (
-          <li key={category.category_id}>
+          <li key={category.category_id} className="pl-0 ml-0">
             <button 
               onClick={() => onCategoryChange(category.category_id)}
-              className={`flex justify-between w-full text-left py-2 px-3 rounded ${selectedCategory == category.category_id ? 'bg-indigo-100 text-indigo-800' : 'text-gray-700 hover:bg-gray-100'}`}
+              className={`w-full text-left py-2 px-3 rounded ${selectedCategory == category.category_id ? 'bg-[#9bc948] text-white' : 'text-gray-700 hover:bg-gray-100'}`}
             >
-              <span>{category.name}</span>
-              <span className="bg-gray-200 text-gray-700 px-2 rounded-full text-sm">
-                {category.product_count || 0}
-              </span>
+              {selectedCategory == category.category_id ? (
+                <>{category.name} ({category.product_count || 0})</>
+              ) : (
+                <>
+                  <span className="text-[#9bc948]">{category.name}</span>
+                  <span className="text-gray-800"> ({category.product_count || 0})</span>
+                </>
+              )}
             </button>
           </li>
         ))}

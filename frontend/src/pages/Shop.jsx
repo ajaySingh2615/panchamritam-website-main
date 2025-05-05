@@ -17,6 +17,7 @@ const Shop = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [showFilters, setShowFilters] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -30,6 +31,7 @@ const Shop = () => {
   const minPriceParam = searchParams.get('minPrice');
   const maxPriceParam = searchParams.get('maxPrice');
   const pageParam = searchParams.get('page');
+  const queryParam = searchParams.get('q');
   
   useEffect(() => {
     // Set initial values from URL params
@@ -42,6 +44,10 @@ const Shop = () => {
     
     if (pageParam) {
       setCurrentPage(parseInt(pageParam, 10));
+    }
+
+    if (queryParam) {
+      setSearchQuery(queryParam);
     }
     
     // Fetch categories
@@ -115,13 +121,28 @@ const Shop = () => {
     navigate(`${location.pathname}?${params.toString()}`);
   };
   
-  const handlePriceFilter = () => {
+  const handlePriceChange = (range) => {
+    setPriceRange(range);
+    // Automatically apply filter when price range changes
+    const params = new URLSearchParams(location.search);
+    params.set('minPrice', range[0].toString());
+    params.set('maxPrice', range[1].toString());
+    params.set('page', '1');
+    navigate(`${location.pathname}?${params.toString()}`);
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    
     const params = new URLSearchParams(location.search);
     
-    params.set('minPrice', priceRange[0].toString());
-    params.set('maxPrice', priceRange[1].toString());
-    params.set('page', '1');
+    if (searchQuery.trim()) {
+      params.set('q', searchQuery);
+    } else {
+      params.delete('q');
+    }
     
+    params.set('page', '1');
     navigate(`${location.pathname}?${params.toString()}`);
   };
   
@@ -181,14 +202,10 @@ const Shop = () => {
     return stars;
   };
   
-  const handlePriceChange = (range) => {
-    setPriceRange(range);
-  };
-  
   return (
-    <div className="bg-gray-100 min-h-screen">
+    <div className="bg-[#f8f6f3] min-h-screen">
       <div className="container mx-auto px-4 py-8">
-        {/* Page Header - Remove breadcrumb and heading from here */}
+        {/* Page Header */}
         <div className="pt-4 mb-8">
           <div className="flex items-center justify-between">
             <p className="text-gray-600">
@@ -209,23 +226,39 @@ const Shop = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar Filters */}
           <div className={`w-full lg:w-1/4 ${showFilters ? 'block' : 'hidden lg:block'}`}>
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-6">Filter by price</h2>
+            {/* Search Box */}
+            <div className="mb-6">
+              <form onSubmit={handleSearch} className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-l focus:outline-none focus:ring-1 focus:ring-[#9bc948]"
+                />
+                <button
+                  type="submit"
+                  className="bg-[#9bc948] text-white px-3 py-2 rounded-r hover:bg-[#8ab938] transition duration-300"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </form>
+            </div>
+            
+            <div className="bg-[#f8f6f3] rounded pl-0 pr-5 pt-5 pb-5 mb-2 text-left">
+              <h2 className="text-[1.35rem] font-semibold text-gray-800 mb-4 no-underline border-0 border-none inline text-left ml-0 pl-0">Filter by price</h2>
               
-              <PriceRangeSlider 
-                minPrice={0}
-                maxPrice={1000}
-                initialMin={priceRange[0]}
-                initialMax={priceRange[1]}
-                onPriceChange={handlePriceChange}
-              />
-              
-              <button 
-                onClick={handlePriceFilter}
-                className="w-full bg-[#9bc948] text-white py-2 rounded-md hover:bg-[#8ab938] transition duration-300"
-              >
-                Filter
-              </button>
+              <div className="pl-0 ml-0 w-full">
+                <PriceRangeSlider 
+                  minPrice={0}
+                  maxPrice={1000}
+                  initialMin={priceRange[0]}
+                  initialMax={priceRange[1]}
+                  onPriceChange={handlePriceChange}
+                />
+              </div>
             </div>
             
             <CategoryFilter
@@ -265,7 +298,7 @@ const Shop = () => {
             </h1>
             
             {/* Sorting Options */}
-            <div className="flex flex-col md:flex-row justify-between items-center mb-6 bg-white p-4 rounded shadow-sm">
+            <div className="flex flex-col md:flex-row justify-between items-center mb-6">
               <div className="text-gray-600 mb-3 md:mb-0">
                 Showing {(currentPage - 1) * productsPerPage + 1}–{Math.min(currentPage * productsPerPage, products.length)} of {products.length} results
               </div>
@@ -273,7 +306,7 @@ const Shop = () => {
                 <select 
                   value={sortOption}
                   onChange={(e) => setSortOption(e.target.value)}
-                  className="px-4 py-2 pr-8 border border-gray-300 rounded-md bg-white appearance-none focus:outline-none focus:ring-1 focus:ring-[#9bc948]"
+                  className="appearance-none bg-transparent pl-0 pr-8 py-0 border-0 text-gray-600 focus:outline-none focus:ring-0"
                 >
                   <option value="default">Default sorting</option>
                   <option value="price-low">Price: Low to High</option>
@@ -281,7 +314,7 @@ const Shop = () => {
                   <option value="name-asc">Name: A to Z</option>
                   <option value="name-desc">Name: Z to A</option>
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-0 text-gray-600">
                   <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
                     <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
                   </svg>
