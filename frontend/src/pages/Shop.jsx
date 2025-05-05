@@ -223,9 +223,9 @@ const Shop = () => {
           </div>
         </div>
         
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col lg:flex-row gap-0">
           {/* Sidebar Filters */}
-          <div className={`w-full lg:w-1/4 ${showFilters ? 'block' : 'hidden lg:block'}`}>
+          <div className={`w-full lg:w-1/4 ${showFilters ? 'block' : 'hidden lg:block'} lg:border-r lg:border-gray-300 lg:pr-6`}>
             {/* Search Box */}
             <div className="mb-6">
               <form onSubmit={handleSearch} className="flex gap-2">
@@ -270,7 +270,7 @@ const Shop = () => {
           </div>
           
           {/* Products Grid */}
-          <div className="w-full lg:w-3/4">
+          <div className="w-full lg:w-3/4 lg:pl-8">
             {/* Move breadcrumb and Shop heading here */}
             {/* Breadcrumb at the top */}
             {categoryParam && categories.find(c => c.category_id == categoryParam) ? (
