@@ -84,6 +84,27 @@ class Product {
     }
   }
 
+  static async findBySlug(slug) {
+    try {
+      if (!slug) {
+        return null;
+      }
+      
+      const [rows] = await pool.execute(
+        `SELECT p.*, c.name as category_name 
+         FROM Products p 
+         LEFT JOIN Categories c ON p.category_id = c.category_id
+         WHERE p.slug = ?`,
+        [slug]
+      );
+      
+      return rows[0];
+    } catch (error) {
+      console.error('Error in Product.findBySlug:', error);
+      throw error;
+    }
+  }
+
   static async findByCategory(categoryId, limit = 20, offset = 0) {
     try {
       console.log('Finding products in category:', categoryId);
@@ -133,52 +154,116 @@ class Product {
   static async create(productData) {
     const { 
       name, 
+      slug,
       description, 
       short_description,
+      ingredients,
+      shelf_life,
+      storage_instructions,
+      usage_instructions,
       price, 
       regular_price,
+      cost_price,
       quantity, 
+      min_stock_alert,
+      unit_of_measurement,
+      package_size,
       categoryId, 
+      subcategory_id,
       brand,
       sku,
+      barcode,
       imageUrl,
+      gallery_images,
+      video_url,
+      meta_title,
+      meta_description,
       free_shipping,
       shipping_time,
       warranty_period,
+      weight_for_shipping,
+      dimensions,
+      delivery_time_estimate,
+      is_returnable,
+      is_cod_available,
       eco_friendly,
       eco_friendly_details,
       tags,
       is_featured,
+      is_best_seller,
+      is_new_arrival,
       status,
       createdBy 
     } = productData;
     
     try {
+      // Helper functions for safe type conversion
+      const safeParseFloat = (value) => {
+        if (value === null || value === undefined || value === '') return null;
+        const num = parseFloat(value);
+        return isNaN(num) ? null : num;
+      };
+      
+      const safeParseInt = (value) => {
+        if (value === null || value === undefined || value === '') return null;
+        const num = parseInt(value, 10);
+        return isNaN(num) ? null : num;
+      };
+      
+      // Generate slug if not provided
+      const productSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-$/, '');
+      
       const [result] = await pool.execute(
         `INSERT INTO Products 
-         (name, description, short_description, price, regular_price, quantity, 
-          category_id, brand, sku, image_url, free_shipping, shipping_time, 
-          warranty_period, eco_friendly, eco_friendly_details, tags, 
-          is_featured, status, created_by) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (name, slug, description, short_description, ingredients, shelf_life, 
+          storage_instructions, usage_instructions, price, regular_price, cost_price, 
+          quantity, min_stock_alert, unit_of_measurement, package_size, category_id, 
+          subcategory_id, brand, sku, barcode, image_url, gallery_images, video_url, 
+          meta_title, meta_description, free_shipping, shipping_time, warranty_period, 
+          weight_for_shipping, dimensions, delivery_time_estimate, is_returnable, 
+          is_cod_available, eco_friendly, eco_friendly_details, tags, is_featured, 
+          is_best_seller, is_new_arrival, status, created_by) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           name, 
+          productSlug,
           description, 
-          short_description,
-          price, 
-          regular_price || price, 
-          quantity || 0, 
+          short_description || (description ? description.substring(0, 150) : null),
+          ingredients || null,
+          shelf_life || null,
+          storage_instructions || null,
+          usage_instructions || null,
+          safeParseFloat(price) || 0, 
+          safeParseFloat(regular_price) || safeParseFloat(price) || 0, 
+          safeParseFloat(cost_price),
+          safeParseInt(quantity) || 0, 
+          safeParseInt(min_stock_alert) || 5,
+          unit_of_measurement || null,
+          package_size || null,
           categoryId, 
+          safeParseInt(subcategory_id),
           brand || 'GreenMagic', 
           sku || `GM-${Date.now()}`, 
-          imageUrl, 
+          barcode || null,
+          imageUrl,
+          gallery_images ? JSON.stringify(gallery_images) : null,
+          video_url || null,
+          meta_title || name,
+          meta_description || short_description || null,
           free_shipping ? 1 : 0, 
           shipping_time || '3-5 business days', 
-          warranty_period || null, 
+          safeParseInt(warranty_period), 
+          safeParseFloat(weight_for_shipping),
+          dimensions || null,
+          delivery_time_estimate || '3-5 business days',
+          is_returnable === false ? 0 : 1,
+          is_cod_available === false ? 0 : 1,
           eco_friendly ? 1 : 0, 
           eco_friendly_details || 'Eco-friendly packaging', 
           tags || '', 
-          is_featured ? 1 : 0, 
+          is_featured ? 1 : 0,
+          is_best_seller ? 1 : 0,
+          is_new_arrival ? 1 : 0,
           status || 'active', 
           createdBy
         ]
@@ -186,7 +271,8 @@ class Product {
       
       return {
         productId: result.insertId,
-        ...productData
+        ...productData,
+        slug: productSlug
       };
     } catch (error) {
       console.error('Error in Product.create:', error);

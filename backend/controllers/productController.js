@@ -119,26 +119,48 @@ exports.createProduct = async (req, res, next) => {
   try {
     const { 
       name, 
+      slug,
       description,
       short_description,
+      ingredients,
+      shelf_life,
+      storage_instructions,
+      usage_instructions,
       price, 
       regular_price,
+      cost_price,
       quantity, 
-      categoryId,
+      min_stock_alert,
+      unit_of_measurement,
+      package_size,
+      categoryId, 
+      subcategory_id,
       brand,
       sku,
+      barcode,
       imageUrl,
+      gallery_images,
+      video_url,
+      meta_title,
+      meta_description,
       free_shipping,
       shipping_time,
       warranty_period,
+      weight_for_shipping,
+      dimensions,
+      delivery_time_estimate,
+      is_returnable,
+      is_cod_available,
       eco_friendly,
       eco_friendly_details,
       tags,
       is_featured,
+      is_best_seller,
+      is_new_arrival,
       status
     } = req.body;
     
-    // Validation
+    // Basic validation
     if (!name || !price || !categoryId) {
       return next(new AppError('Name, price, and category ID are required', 400));
     }
@@ -149,6 +171,14 @@ exports.createProduct = async (req, res, next) => {
       return next(new AppError('Category not found', 404));
     }
     
+    // Check if subcategory exists if provided
+    if (subcategory_id) {
+      const subcategory = await Category.findById(subcategory_id);
+      if (!subcategory) {
+        return next(new AppError('Subcategory not found', 404));
+      }
+    }
+    
     // Check if SKU exists
     if (sku) {
       const existingSku = await Product.findBySku(sku);
@@ -157,25 +187,55 @@ exports.createProduct = async (req, res, next) => {
       }
     }
     
+    // Check if slug exists
+    if (slug) {
+      const existingProductWithSlug = await Product.findBySlug(slug);
+      if (existingProductWithSlug) {
+        return next(new AppError('URL slug already exists', 400));
+      }
+    }
+    
     // Create product with all fields
     const newProduct = await Product.create({
       name,
+      slug,
       description,
-      short_description: short_description || (description ? description.substring(0, 150) : null),
+      short_description,
+      ingredients,
+      shelf_life,
+      storage_instructions,
+      usage_instructions,
       price,
       regular_price: regular_price || price,
+      cost_price,
       quantity: quantity || 0,
+      min_stock_alert,
+      unit_of_measurement,
+      package_size,
       categoryId,
+      subcategory_id,
       brand: brand || 'GreenMagic',
-      sku: sku || `GM-${Date.now()}`, // Generate unique SKU if not provided
+      sku: sku || `GM-${Date.now()}`,
+      barcode,
       imageUrl: imageUrl || null,
+      gallery_images,
+      video_url,
+      meta_title,
+      meta_description,
       free_shipping: free_shipping || false,
       shipping_time: shipping_time || '3-5 business days',
       warranty_period: warranty_period || null,
+      weight_for_shipping,
+      dimensions,
+      delivery_time_estimate,
+      is_returnable,
+      is_cod_available,
       eco_friendly: eco_friendly !== undefined ? eco_friendly : true,
       eco_friendly_details: eco_friendly_details || 'Eco-friendly packaging',
       tags: tags || '',
       is_featured: is_featured || false,
+      is_best_seller: is_best_seller || false,
+      is_new_arrival: is_new_arrival || false,
       status: status || 'active',
       createdBy: req.user.user_id
     });
@@ -200,24 +260,46 @@ exports.updateProduct = async (req, res, next) => {
     const { id } = req.params;
     const { 
       name, 
+      slug,
       description, 
       short_description,
+      ingredients,
+      shelf_life,
+      storage_instructions,
+      usage_instructions,
       price, 
       regular_price,
+      cost_price,
       quantity, 
+      min_stock_alert,
+      unit_of_measurement,
+      package_size,
       categoryId, 
+      subcategory_id,
       brand,
       sku,
+      barcode,
       imageUrl,
+      gallery_images,
+      video_url,
+      meta_title,
+      meta_description,
       free_shipping,
       shipping_time,
       warranty_period,
+      weight_for_shipping,
+      dimensions,
+      delivery_time_estimate,
+      is_returnable,
+      is_cod_available,
       eco_friendly,
       eco_friendly_details,
       rating,
       review_count,
       tags,
       is_featured,
+      is_best_seller,
+      is_new_arrival,
       status
     } = req.body;
     
@@ -243,27 +325,57 @@ exports.updateProduct = async (req, res, next) => {
       }
     }
     
+    // If updating slug, check it doesn't conflict
+    if (slug && slug !== product.slug) {
+      const existingSlug = await Product.findBySlug(slug);
+      if (existingSlug && existingSlug.product_id !== parseInt(id)) {
+        return next(new AppError('URL slug already exists', 400));
+      }
+    }
+    
     // Prepare update data with all fields
     const updateData = {};
     if (name !== undefined) updateData.name = name;
+    if (slug !== undefined) updateData.slug = slug;
     if (description !== undefined) updateData.description = description;
     if (short_description !== undefined) updateData.short_description = short_description;
+    if (ingredients !== undefined) updateData.ingredients = ingredients;
+    if (shelf_life !== undefined) updateData.shelf_life = shelf_life;
+    if (storage_instructions !== undefined) updateData.storage_instructions = storage_instructions;
+    if (usage_instructions !== undefined) updateData.usage_instructions = usage_instructions;
     if (price !== undefined) updateData.price = price;
     if (regular_price !== undefined) updateData.regular_price = regular_price;
+    if (cost_price !== undefined) updateData.cost_price = cost_price;
     if (quantity !== undefined) updateData.quantity = quantity;
+    if (min_stock_alert !== undefined) updateData.min_stock_alert = min_stock_alert;
+    if (unit_of_measurement !== undefined) updateData.unit_of_measurement = unit_of_measurement;
+    if (package_size !== undefined) updateData.package_size = package_size;
     if (categoryId !== undefined) updateData.categoryId = categoryId;
+    if (subcategory_id !== undefined) updateData.subcategory_id = subcategory_id;
     if (brand !== undefined) updateData.brand = brand;
     if (sku !== undefined) updateData.sku = sku;
+    if (barcode !== undefined) updateData.barcode = barcode;
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+    if (gallery_images !== undefined) updateData.gallery_images = gallery_images;
+    if (video_url !== undefined) updateData.video_url = video_url;
+    if (meta_title !== undefined) updateData.meta_title = meta_title;
+    if (meta_description !== undefined) updateData.meta_description = meta_description;
     if (free_shipping !== undefined) updateData.free_shipping = free_shipping;
     if (shipping_time !== undefined) updateData.shipping_time = shipping_time;
     if (warranty_period !== undefined) updateData.warranty_period = warranty_period;
+    if (weight_for_shipping !== undefined) updateData.weight_for_shipping = weight_for_shipping;
+    if (dimensions !== undefined) updateData.dimensions = dimensions;
+    if (delivery_time_estimate !== undefined) updateData.delivery_time_estimate = delivery_time_estimate;
+    if (is_returnable !== undefined) updateData.is_returnable = is_returnable;
+    if (is_cod_available !== undefined) updateData.is_cod_available = is_cod_available;
     if (eco_friendly !== undefined) updateData.eco_friendly = eco_friendly;
     if (eco_friendly_details !== undefined) updateData.eco_friendly_details = eco_friendly_details;
     if (rating !== undefined) updateData.rating = rating;
     if (review_count !== undefined) updateData.review_count = review_count;
     if (tags !== undefined) updateData.tags = tags;
     if (is_featured !== undefined) updateData.is_featured = is_featured;
+    if (is_best_seller !== undefined) updateData.is_best_seller = is_best_seller;
+    if (is_new_arrival !== undefined) updateData.is_new_arrival = is_new_arrival;
     if (status !== undefined) updateData.status = status;
     
     // Update product
