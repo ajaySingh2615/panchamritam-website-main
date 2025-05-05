@@ -1,24 +1,33 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import './Breadcrumb.css';
 
-const Breadcrumb = ({ items }) => {
+const Breadcrumb = ({ items = [] }) => {
+  if (!items || items.length === 0) return null;
+
   return (
-    <nav className="breadcrumb" aria-label="breadcrumb">
-      <ol>
-        {items.map((item, index) => (
-          <li key={index}>
-            {index === items.length - 1 ? (
-              <span className="current">{item.label}</span>
-            ) : (
-              <>
-                <Link to={item.path}>{item.label}</Link>
-                <span className="separator">/</span>
-              </>
+    <nav className="mb-3 flex items-center text-sm font-medium text-gray-500">
+      {items.map((item, index) => {
+        const isLast = index === items.length - 1;
+        
+        return (
+          <React.Fragment key={index}>
+            {index > 0 && (
+              <span className="mx-2">/</span>
             )}
-          </li>
-        ))}
-      </ol>
+            
+            {isLast ? (
+              <span>{item.label}</span>
+            ) : (
+              <Link 
+                to={item.path} 
+                className="hover:text-gray-700 transition duration-200"
+              >
+                {item.label}
+              </Link>
+            )}
+          </React.Fragment>
+        );
+      })}
     </nav>
   );
 };
