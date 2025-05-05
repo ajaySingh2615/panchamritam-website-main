@@ -45,7 +45,7 @@ const Cart = () => {
             <p>Your cart is empty</p>
             <button 
               className="continue-shopping-button"
-              onClick={() => navigate('/shop')}
+              onClick={() => navigate('/')}
             >
               Continue Shopping
             </button>
@@ -79,7 +79,7 @@ const Cart = () => {
                 </button>
                 <button 
                   className="continue-shopping-button"
-                  onClick={() => navigate('/shop')}
+                  onClick={() => navigate('/')}
                 >
                   Continue Shopping
                 </button>

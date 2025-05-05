@@ -245,8 +245,6 @@ const ProductDetails = () => {
   const discount = calculateDiscount();
   const breadcrumbItems = [
     { label: 'Home', path: '/' },
-    { label: 'Shop', path: '/shop' },
-    { label: product.category_name || 'Category', path: `/shop?category=${product.category_id}` },
     { label: product.name, path: `/product/${product.product_id}` }
   ];
 
@@ -421,16 +419,12 @@ const ProductDetails = () => {
               </div>
               <div className="meta-item">
                 <span className="label">Category:</span>
-                <span className="value">
-                  <a href={`/shop?category=${product.category_id}`}>{product.category_name}</a>
-                </span>
+                <span className="value">{product.category_name}</span>
               </div>
               {product.brand && (
                 <div className="meta-item">
                   <span className="label">Brand:</span>
-                  <span className="value">
-                    <a href={`/shop?brand=${product.brand}`}>{product.brand}</a>
-                  </span>
+                  <span className="value">{product.brand}</span>
                 </div>
               )}
               {product.tags && (
@@ -438,9 +432,7 @@ const ProductDetails = () => {
                   <span className="label">Tags:</span>
                   <span className="value tags">
                     {product.tags.split(',').map((tag, index) => (
-                      <a key={index} href={`/shop?tag=${tag.trim()}`} className="tag">
-                        {tag.trim()}
-                      </a>
+                      <span key={index} className="tag">{tag.trim()}</span>
                     ))}
                   </span>
                 </div>

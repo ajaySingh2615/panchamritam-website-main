@@ -1,6 +1,8 @@
 const Product = require('../models/product');
 const Category = require('../models/category');
 const { AppError } = require('../middlewares/errorHandler');
+const { uploadImage, uploadMultipleImages } = require('../config/cloudinary');
+const fs = require('fs');
 
 // Get all products with pagination
 exports.getAllProducts = async (req, res, next) => {
@@ -530,6 +532,164 @@ exports.getRelatedProducts = async (req, res, next) => {
     });
   } catch (error) {
     console.error('Error in getRelatedProducts controller:', error);
+    next(error);
+  }
+};
+
+// Upload product main image
+exports.uploadProductImage = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    
+    // Check if product exists
+    const product = await Product.findById(id);
+    if (!product) {
+      // Delete uploaded file if product doesn't exist
+      if (req.file) fs.unlinkSync(req.file.path);
+      return next(new AppError('Product not found', 404));
+    }
+    
+    // No file was uploaded
+    if (!req.file) {
+      return next(new AppError('Please upload an image file', 400));
+    }
+    
+    // Upload image to Cloudinary
+    const result = await uploadImage(req.file.path);
+    
+    // Remove the temporary file
+    fs.unlinkSync(req.file.path);
+    
+    // Update product with new image URL
+    const updateData = {
+      imageUrl: result.secure_url
+    };
+    
+    // Update product
+    const updatedProduct = await Product.update(id, updateData);
+    
+    res.status(200).json({
+      status: 'success',
+      data: {
+        imageUrl: result.secure_url,
+        public_id: result.public_id
+      }
+    });
+  } catch (error) {
+    // Clean up temporary file in case of error
+    if (req.file) {
+      fs.unlinkSync(req.file.path);
+    }
+    next(error);
+  }
+};
+
+// Upload product gallery images
+exports.uploadGalleryImages = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    
+    // Check if product exists
+    const product = await Product.findById(id);
+    if (!product) {
+      // Delete uploaded files if product doesn't exist
+      if (req.files && req.files.length > 0) {
+        req.files.forEach(file => fs.unlinkSync(file.path));
+      }
+      return next(new AppError('Product not found', 404));
+    }
+    
+    // No files were uploaded
+    if (!req.files || req.files.length === 0) {
+      return next(new AppError('Please upload at least one image file', 400));
+    }
+    
+    // Upload images to Cloudinary
+    const uploadPromises = req.files.map(file => uploadImage(file.path));
+    const results = await Promise.all(uploadPromises);
+    
+    // Remove the temporary files
+    req.files.forEach(file => fs.unlinkSync(file.path));
+    
+    // Extract image URLs
+    const galleryImages = results.map(result => ({
+      url: result.secure_url,
+      public_id: result.public_id
+    }));
+    
+    // Get existing gallery images if any
+    let existingGallery = [];
+    if (product.gallery_images) {
+      try {
+        existingGallery = JSON.parse(product.gallery_images);
+        if (!Array.isArray(existingGallery)) existingGallery = [];
+      } catch (e) {
+        existingGallery = [];
+      }
+    }
+    
+    // Combine existing and new gallery images
+    const combinedGallery = [...existingGallery, ...galleryImages];
+    
+    // Update product with new gallery images
+    const updateData = {
+      gallery_images: JSON.stringify(combinedGallery)
+    };
+    
+    // Update product
+    const updatedProduct = await Product.update(id, updateData);
+    
+    res.status(200).json({
+      status: 'success',
+      data: {
+        gallery_images: combinedGallery
+      }
+    });
+  } catch (error) {
+    // Clean up temporary files in case of error
+    if (req.files && req.files.length > 0) {
+      req.files.forEach(file => {
+        if (fs.existsSync(file.path)) {
+          fs.unlinkSync(file.path);
+        }
+      });
+    }
+    next(error);
+  }
+};
+
+// Save video URL for product
+exports.saveVideoUrl = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { video_url } = req.body;
+    
+    // Check if product exists
+    const product = await Product.findById(id);
+    if (!product) {
+      return next(new AppError('Product not found', 404));
+    }
+    
+    // Validate video URL
+    if (!video_url) {
+      return next(new AppError('Video URL is required', 400));
+    }
+    
+    // Update product with video URL
+    const updateData = {
+      video_url
+    };
+    
+    // Update product
+    const updatedProduct = await Product.update(id, updateData);
+    
+    res.status(200).json({
+      status: 'success',
+      data: {
+        video_url
+      }
+    });
+  } catch (error) {
     next(error);
   }
 }; 

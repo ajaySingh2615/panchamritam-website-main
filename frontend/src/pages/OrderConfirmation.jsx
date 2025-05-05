@@ -153,7 +153,7 @@ const OrderConfirmation = () => {
         <div className="confirmation-actions">
           <button 
             className="continue-shopping-button"
-            onClick={() => navigate('/shop')}
+            onClick={() => navigate('/')}
           >
             Continue Shopping
           </button>

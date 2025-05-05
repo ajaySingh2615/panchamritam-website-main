@@ -227,6 +227,7 @@ export const deleteProduct = async (productId) => {
   }
 };
 
+// Upload single product image
 export const uploadProductImage = async (productId, imageFile) => {
   try {
     const formData = new FormData();
@@ -236,6 +237,39 @@ export const uploadProductImage = async (productId, imageFile) => {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
+    });
+    return response.data;
+  } catch (error) {
+    throw handleError(error);
+  }
+};
+
+// Upload multiple gallery images
+export const uploadGalleryImages = async (productId, imageFiles) => {
+  try {
+    const formData = new FormData();
+    
+    // Append each image to the form data
+    imageFiles.forEach(file => {
+      formData.append('images', file);
+    });
+    
+    const response = await api.post(`/products/${productId}/upload-gallery`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    throw handleError(error);
+  }
+};
+
+// Save video URL
+export const saveVideoUrl = async (productId, videoUrl) => {
+  try {
+    const response = await api.post(`/products/${productId}/save-video-url`, {
+      video_url: videoUrl
     });
     return response.data;
   } catch (error) {

@@ -6,7 +6,6 @@ import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import PrivateRoute from './components/auth/PrivateRoute';
 import Home from './pages/Home';
-import Shop from './pages/Shop';
 import ProductDetails from './pages/ProductDetails';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
@@ -99,7 +98,6 @@ const App = () => {
             
             {/* Public Routes with Main Layout */}
             <Route path="/" element={<MainLayout><Home /></MainLayout>} />
-            <Route path="/shop" element={<MainLayout><Shop /></MainLayout>} />
             <Route path="/product/:productId" element={<MainLayout><ProductDetails /></MainLayout>} />
             <Route path="/cart" element={<MainLayout><Cart /></MainLayout>} />
             <Route path="/login" element={<MainLayout><Login /></MainLayout>} />

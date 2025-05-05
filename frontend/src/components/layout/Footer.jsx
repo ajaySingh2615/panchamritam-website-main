@@ -8,26 +8,25 @@ const Footer = () => {
       <div className="footer-container">
         <div className="footer-section">
           <h3>GreenMagic</h3>
-          <p>Your one-stop shop for all your gardening needs. Quality products, expert advice, and sustainable solutions.</p>
+          <p>Your destination for gardening needs. Quality products, expert advice, and sustainable solutions.</p>
         </div>
 
         <div className="footer-section">
           <h4>Quick Links</h4>
           <ul>
             <li><Link to="/">Home</Link></li>
-            <li><Link to="/shop">Shop</Link></li>
             <li><Link to="/blog">Blog</Link></li>
             <li><Link to="/contact">Contact</Link></li>
           </ul>
         </div>
 
         <div className="footer-section">
-          <h4>Categories</h4>
+          <h4>Services</h4>
           <ul>
-            <li><Link to="/shop?category=plants">Plants</Link></li>
-            <li><Link to="/shop?category=tools">Tools</Link></li>
-            <li><Link to="/shop?category=seeds">Seeds</Link></li>
-            <li><Link to="/shop?category=accessories">Accessories</Link></li>
+            <li><Link to="/services">Garden Design</Link></li>
+            <li><Link to="/services">Landscaping</Link></li>
+            <li><Link to="/services">Plant Care</Link></li>
+            <li><Link to="/services">Consultations</Link></li>
           </ul>
         </div>
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { createProduct, getAllCategories, uploadProductImage } from '../../services/adminAPI';
+import { createProduct, getAllCategories, uploadProductImage, uploadGalleryImages, saveVideoUrl } from '../../services/adminAPI';
 
 const ProductCreate = () => {
   const navigate = useNavigate();
@@ -67,6 +67,8 @@ const ProductCreate = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [previewImage, setPreviewImage] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
+  const [galleryFiles, setGalleryFiles] = useState([]);
+  const [galleryPreviews, setGalleryPreviews] = useState([]);
 
   // Fetch categories on component mount
   useEffect(() => {
@@ -113,6 +115,40 @@ const ProductCreate = () => {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleGalleryImagesChange = (e) => {
+    const files = Array.from(e.target.files);
+    
+    // Only select up to 5 files
+    const selectedFiles = files.slice(0, 5);
+    
+    // Validate image types
+    const invalidFiles = selectedFiles.filter(file => !file.type.match('image.*'));
+    if (invalidFiles.length > 0) {
+      setError('All gallery files must be images (png, jpg, jpeg)');
+      return;
+    }
+    
+    // Create preview URLs
+    const readers = selectedFiles.map(file => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (event) => resolve(event.target.result);
+        reader.readAsDataURL(file);
+      });
+    });
+    
+    Promise.all(readers)
+      .then(previews => {
+        setGalleryPreviews(previews);
+        setGalleryFiles(selectedFiles);
+      });
+  };
+  
+  const removeGalleryImage = (index) => {
+    setGalleryPreviews(prevPreviews => prevPreviews.filter((_, i) => i !== index));
+    setGalleryFiles(prevFiles => prevFiles.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e) => {
@@ -197,6 +233,16 @@ const ProductCreate = () => {
       // If we have an image file, upload it
       if (imageFile) {
         await uploadProductImage(newProductId, imageFile);
+      }
+      
+      // If we have gallery files, upload them
+      if (galleryFiles && galleryFiles.length > 0) {
+        await uploadGalleryImages(newProductId, galleryFiles);
+      }
+      
+      // If we have a video URL that wasn't included in the initial product data
+      if (formData.video_url && formData.video_url.trim() !== '') {
+        await saveVideoUrl(newProductId, formData.video_url);
       }
       
       setSuccessMessage('Product created successfully!');
@@ -967,11 +1013,49 @@ const ProductCreate = () => {
       
       <div className="mt-8 mb-6">
         <label htmlFor="gallery_images" className="block text-sm font-medium text-gray-700 mb-2">
-          Gallery Images (Coming soon)
+          Gallery Images (Max 5)
         </label>
-        <div className="bg-gray-100 p-4 rounded-md text-gray-500 text-center">
-          <p>Multiple image upload will be enabled in a future update.</p>
+        <div className="flex flex-col items-center">
+          <label className="flex flex-col items-center px-4 py-6 bg-white text-green-600 rounded-lg border-2 border-dashed border-green-400 hover:bg-green-50 cursor-pointer transition-colors">
+            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span className="mt-2 text-base leading-normal">Upload gallery images</span>
+            <input 
+              type="file" 
+              id="gallery_images" 
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handleGalleryImagesChange}
+            />
+          </label>
+          <p className="mt-1 text-xs text-gray-500">You can select up to 5 images</p>
         </div>
+        
+        {galleryPreviews.length > 0 && (
+          <div className="mt-4">
+            <p className="text-sm font-medium text-gray-700 mb-2">Gallery previews:</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+              {galleryPreviews.map((preview, index) => (
+                <div key={index} className="relative">
+                  <img 
+                    src={preview} 
+                    alt={`Gallery image ${index + 1}`} 
+                    className="h-24 w-24 object-cover rounded-lg shadow-sm" 
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeGalleryImage(index)}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
       
       <div className="mb-4">

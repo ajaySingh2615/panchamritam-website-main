@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import ProductCard from '../shop/ProductCard';
 import { API_ENDPOINTS, API_URL } from '../../config/api';
 import { checkBackendConnection, testApiCall } from '../../utils/apiUtils';
 import './ReviewTabs.css';
@@ -222,6 +221,48 @@ const ReviewTabs = ({ productId }) => {
     }
   };
 
+  // Add a simple product card component to replace the imported one
+  const RelatedProductItem = ({ product }) => {
+    if (!product) return null;
+    
+    return (
+      <div className="related-product-item">
+        <Link to={`/product/${product.product_id}`} className="related-product-link">
+          <img 
+            src={product.image_url || '/placeholder-product.jpg'} 
+            alt={product.name || 'Product'} 
+            className="related-product-image"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = '/placeholder-product.jpg';
+            }}
+          />
+          <h3 className="related-product-name">{product.name}</h3>
+          <div className="related-product-price">${typeof product.price === 'string' ? parseFloat(product.price).toFixed(2) : product.price.toFixed(2)}</div>
+        </Link>
+      </div>
+    );
+  };
+
+  // In the RelatedProducts section, replace ProductCard with RelatedProductItem
+  const RelatedProducts = ({ products }) => {
+    if (!products || products.length === 0) {
+      return (
+        <div className="no-data">
+          <p>No related products available</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="related-products-list">
+        {products.map((product) => (
+          <RelatedProductItem key={product.product_id} product={product} />
+        ))}
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -415,15 +456,7 @@ const ReviewTabs = ({ productId }) => {
         
         {/* Related Products Tab */}
         <div className={`tab-pane ${activeTab === 'related' ? 'active' : ''}`}>
-          {relatedProducts.length === 0 ? (
-            <p className="no-related">No related products found.</p>
-          ) : (
-            <div className="related-products-grid">
-              {relatedProducts.map((product) => (
-                <ProductCard key={product.product_id} product={product} />
-              ))}
-            </div>
-          )}
+          <RelatedProducts products={relatedProducts} />
         </div>
       </div>
     </div>
