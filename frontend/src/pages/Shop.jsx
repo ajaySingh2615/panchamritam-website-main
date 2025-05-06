@@ -347,7 +347,6 @@ const Shop = () => {
                   <ProductCard 
                     key={product.product_id}
                     product={product}
-                    onAddToCart={handleAddToCart}
                   />
                 ))}
               </div>
