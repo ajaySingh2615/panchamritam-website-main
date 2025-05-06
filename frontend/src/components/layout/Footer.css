@@ -2,7 +2,7 @@
   background-color: var(--primary-dark);
   color: var(--text-light);
   padding-top: 3rem;
-  margin-top: 4rem;
+  margin-top: 0;
 }
 
 .footer-container {

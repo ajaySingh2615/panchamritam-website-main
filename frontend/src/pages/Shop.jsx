@@ -93,7 +93,7 @@ const Shop = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { addToCart } = useCart();
-  
+
   // Parse URL search params
   const searchParams = new URLSearchParams(location.search);
   const categoryParam = searchParams.get('category');
@@ -171,23 +171,23 @@ const Shop = () => {
     };
   }, [searchQuery]);
   
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch(API_ENDPOINTS.CATEGORIES);
-      
-      if (!response.ok) {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch(API_ENDPOINTS.CATEGORIES);
+        
+        if (!response.ok) {
         throw new Error('Failed to fetch categories');
+        }
+
+        const data = await response.json();
+        if (data.data && data.data.categories) {
+          setCategories(data.data.categories);
+        }
+      } catch (err) {
+        console.error('Error fetching categories:', err);
       }
-      
-      const data = await response.json();
-      if (data.data && data.data.categories) {
-        setCategories(data.data.categories);
-      }
-    } catch (err) {
-      console.error('Error fetching categories:', err);
-    }
-  };
-  
+    };
+
   const fetchProducts = async () => {
     try {
       setLoading(true);
@@ -494,37 +494,56 @@ const Shop = () => {
     navigate(`${location.pathname}?${params.toString()}`);
   };
 
+  // Add a new function to handle reset all filters
+  const handleResetFilters = () => {
+    // Clear search query
+    setSearchQuery('');
+    setDebouncedSearchQuery('');
+    
+    // Reset price range to default
+    setPriceRange([0, 10000]);
+    
+    // Reset sort option
+    setSortOption('default');
+    
+    // Reset to page 1
+    setCurrentPage(1);
+    
+    // Clear all URL parameters and navigate to clean shop URL
+    navigate('/shop');
+  };
+
   return (
-    <div className="bg-[#f8f6f3] min-h-screen">
-      <div className="container mx-auto px-4 py-8">
+    <div className="bg-[#f8f6f3] min-h-screen pb-0">
+      <div className="container mx-auto px-4 pt-16 pb-8 sm:pt-16 md:pt-12 lg:pt-8">
         {/* Page Header */}
         <div className="pt-4 mb-8">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <p className="text-gray-600">
               {products.length > 0 ? `${totalProducts} products found` : 'No products found'}
             </p>
             <button 
               onClick={toggleFilters}
-              className="lg:hidden bg-[#9bc948] text-white px-4 py-2 rounded-md flex items-center hover:bg-[#8ab938] transition duration-300"
+              className="lg:hidden bg-[#9bc948] text-white px-4 py-2 rounded-md flex items-center hover:bg-[#8ab938] transition duration-300 self-start"
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
               </svg>
-              {showFilters ? 'Hide Filters' : 'Show Filters'}
-            </button>
+          {showFilters ? 'Hide Filters' : 'Show Filters'} 
+        </button>
           </div>
         </div>
         
-        <div className="flex flex-col lg:flex-row gap-0">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-0">
           {/* Sidebar Filters */}
-          <div className={`w-full lg:w-1/4 ${showFilters ? 'block' : 'hidden lg:block'} lg:border-r lg:border-gray-300 lg:pr-6`}>
+          <div className={`w-full lg:w-1/4 ${showFilters ? 'block mb-8 lg:mb-0' : 'hidden lg:block'} lg:border-r lg:border-gray-300 lg:pr-6`}>
             {/* Search Box */}
             <div className="mb-6">
               <form onSubmit={handleSearchSubmit} className="flex gap-2">
                 <div className="relative flex-grow">
-                  <input
-                    type="text"
-                    placeholder="Search products..."
+              <input
+                type="text"
+                placeholder="Search products..."
                     value={searchQuery}
                     onChange={handleSearchInputChange}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-l focus:outline-none focus:ring-1 focus:ring-[#9bc948]"
@@ -547,8 +566,8 @@ const Shop = () => {
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </button>
+                </svg>
+              </button>
               </form>
               {debouncedSearchQuery && (
                 <div className="mt-2 text-sm">
@@ -576,9 +595,9 @@ const Shop = () => {
                   initialMax={priceRange[1]}
                   onPriceChange={handlePriceChange}
                 />
-              </div>
             </div>
-            
+          </div>
+          
             <CategoryFilter
               categories={categories}
               selectedCategory={categoryParam}
@@ -608,7 +627,7 @@ const Shop = () => {
             )}
             
             {/* Shop heading with adjusted spacing */}
-            <h1 className="text-6xl font-bold text-[#9bc948] mt-2 mb-6">
+            <h1 className="text-4xl sm:text-6xl font-bold text-[#9bc948] mt-2 mb-6">
               {categoryParam && categories.find(c => c.category_id == categoryParam)
                 ? categories.find(c => c.category_id == categoryParam).name
                 : 'Shop'
@@ -616,7 +635,7 @@ const Shop = () => {
             </h1>
             
             {/* Sorting Options */}
-            <div className="flex flex-col md:flex-row justify-between items-center mb-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
               <div className="text-gray-600 mb-3 md:mb-0">
                 {products.length > 0 ? (
                   <>
@@ -633,11 +652,11 @@ const Shop = () => {
                   <>No products found</>
                 )}
               </div>
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-4 flex-wrap gap-y-2">
                 <CustomDropdown
                   options={sortOptions}
-                  value={sortOption}
-                  onChange={handleSortChange}
+                value={sortOption}
+                onChange={handleSortChange}
                   className="w-40"
                 />
                 
@@ -651,13 +670,13 @@ const Shop = () => {
                     <option value="12">Show 12</option>
                     <option value="24">Show 24</option>
                     <option value="all">Show all</option>
-                  </select>
+              </select>
                   <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-gray-600">
                     <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
                       <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
                     </svg>
-                  </div>
-                </div>
+            </div>
+          </div>
               </div>
             </div>
             
@@ -679,7 +698,7 @@ const Shop = () => {
                   }
                 </p>
                 <button 
-                  onClick={() => navigate('/shop')}
+                  onClick={handleResetFilters}
                   className="bg-[#9bc948] text-white px-4 py-2 rounded-md hover:bg-[#8ab938] transition duration-300"
                 >
                   Reset Filters
@@ -702,33 +721,33 @@ const Shop = () => {
                 <nav className="flex items-center space-x-2">
                   {Array.from({ length: Math.max(1, totalPages) }, (_, i) => i + 1)
                     .map(page => (
-                      <button
+              <button
                         key={page}
-                        onClick={() => handlePageChange(page)}
+                      onClick={() => handlePageChange(page)}
                         className={`w-12 h-12 flex items-center justify-center text-lg font-medium transition-colors duration-150 ${
                           currentPage === page
                             ? 'bg-[#9bc948] text-white' 
                             : 'bg-white border border-[#9bc948] text-[#9bc948] hover:bg-gray-50'
                         }`}
-                        aria-label={`Page ${page}`}
-                        aria-current={currentPage === page ? 'page' : undefined}
-                      >
-                        {page}
-                      </button>
-                    ))}
-                  
-                  {currentPage < totalPages && (
-                    <button 
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      className="w-12 h-12 flex items-center justify-center bg-white border border-[#9bc948] text-[#9bc948] hover:bg-gray-50 transition-colors duration-150"
-                      aria-label="Next page"
+                      aria-label={`Page ${page}`}
+                      aria-current={currentPage === page ? 'page' : undefined}
                     >
-                      →
+                      {page}
                     </button>
+                ))}
+              
+                  {currentPage < totalPages && (
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                      className="w-12 h-12 flex items-center justify-center bg-white border border-[#9bc948] text-[#9bc948] hover:bg-gray-50 transition-colors duration-150"
+                aria-label="Next page"
+              >
+                      →
+              </button>
                   )}
                 </nav>
-              </div>
-            )}
+            </div>
+          )}
           </div>
         </div>
       </div>
