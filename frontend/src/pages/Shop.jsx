@@ -79,7 +79,7 @@ const Shop = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [priceRange, setPriceRange] = useState([0, 1000]);
+  const [priceRange, setPriceRange] = useState([0, 10000]);
   const [sortOption, setSortOption] = useState('default');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -108,8 +108,11 @@ const Shop = () => {
     if (minPriceParam && maxPriceParam) {
       setPriceRange([
         parseInt(minPriceParam || 0, 10),
-        parseInt(maxPriceParam || 1000, 10)
+        parseInt(maxPriceParam || 10000, 10)
       ]);
+    } else {
+      // Set default price range if not in URL
+      setPriceRange([0, 10000]);
     }
     
     if (pageParam) {
@@ -285,11 +288,13 @@ const Shop = () => {
   
   const handlePriceChange = (range) => {
     setPriceRange(range);
-    // Automatically apply filter when price range changes
+    
+    // Update URL
     const params = new URLSearchParams(location.search);
     params.set('minPrice', range[0].toString());
     params.set('maxPrice', range[1].toString());
-    params.set('page', '1');
+    params.set('page', '1'); // Reset to page 1 when filters change
+    
     navigate(`${location.pathname}?${params.toString()}`);
   };
 
@@ -345,10 +350,55 @@ const Shop = () => {
     });
   };
 
-  // Apply search filter to sorted products using the debounced query
+  // Apply price filter to products
+  const applyPriceFilter = (products) => {
+    if (!priceRange || priceRange.length !== 2) return products;
+    
+    const [minPrice, maxPrice] = priceRange;
+    
+    return products.filter(product => {
+      const price = parseFloat(product.price || 0);
+      return price >= minPrice && price <= maxPrice;
+    });
+  };
+  
+  // Sort products based on selected option
+  const getSortedProducts = () => {
+    if (!products || products.length === 0) return [];
+
+    const productsCopy = [...products];
+
+    switch (sortOption) {
+      case 'price-low':
+        return productsCopy.sort((a, b) => 
+          parseFloat(a.price || 0) - parseFloat(b.price || 0)
+        );
+      case 'price-high':
+        return productsCopy.sort((a, b) => 
+          parseFloat(b.price || 0) - parseFloat(a.price || 0)
+        );
+      case 'name-asc':
+        return productsCopy.sort((a, b) => 
+          (a.name || '').localeCompare(b.name || '')
+        );
+      case 'name-desc':
+        return productsCopy.sort((a, b) => 
+          (b.name || '').localeCompare(a.name || '')
+        );
+      case 'default':
+      default:
+        // Default sorting - you can define what this means for your shop
+        // Often it's by newest or featured products
+        return productsCopy;
+    }
+  };
+
+  // Apply all filters in the correct order
+  const sortedProducts = getSortedProducts();
+  const priceFilteredProducts = applyPriceFilter(sortedProducts);
   const filteredProducts = debouncedSearchQuery 
-    ? searchProducts(products, debouncedSearchQuery)
-    : products;
+    ? searchProducts(priceFilteredProducts, debouncedSearchQuery)
+    : priceFilteredProducts;
   
   const handlePageChange = (page) => {
     if (page === currentPage) return; // Don't reload if already on this page
@@ -444,40 +494,6 @@ const Shop = () => {
     navigate(`${location.pathname}?${params.toString()}`);
   };
 
-  // Sort products based on selected option
-  const getSortedProducts = () => {
-    if (!products || products.length === 0) return [];
-
-    const productsCopy = [...products];
-
-    switch (sortOption) {
-      case 'price-low':
-        return productsCopy.sort((a, b) => 
-          parseFloat(a.price || 0) - parseFloat(b.price || 0)
-        );
-      case 'price-high':
-        return productsCopy.sort((a, b) => 
-          parseFloat(b.price || 0) - parseFloat(a.price || 0)
-        );
-      case 'name-asc':
-        return productsCopy.sort((a, b) => 
-          (a.name || '').localeCompare(b.name || '')
-        );
-      case 'name-desc':
-        return productsCopy.sort((a, b) => 
-          (b.name || '').localeCompare(a.name || '')
-        );
-      case 'default':
-      default:
-        // Default sorting - you can define what this means for your shop
-        // Often it's by newest or featured products
-        return productsCopy;
-    }
-  };
-
-  // Get sorted products
-  const sortedProducts = getSortedProducts();
-  
   return (
     <div className="bg-[#f8f6f3] min-h-screen">
       <div className="container mx-auto px-4 py-8">
@@ -555,7 +571,7 @@ const Shop = () => {
               <div className="pl-0 ml-0 w-full">
                 <PriceRangeSlider 
                   minPrice={0}
-                  maxPrice={1000}
+                  maxPrice={10000}
                   initialMin={priceRange[0]}
                   initialMax={priceRange[1]}
                   onPriceChange={handlePriceChange}
