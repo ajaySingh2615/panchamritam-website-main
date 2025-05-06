@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { API_ENDPOINTS } from '../config/api';
@@ -6,6 +6,68 @@ import PriceRangeSlider from '../components/shop/PriceRangeSlider';
 import CategoryFilter from '../components/shop/CategoryFilter';
 import ProductCard from '../components/shop/ProductCard';
 import Breadcrumb from '../components/common/Breadcrumb';
+
+// Custom dropdown component
+const CustomDropdown = ({ options, value, onChange, className }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [dropdownRef]);
+  
+  const handleOptionClick = (option) => {
+    onChange(option.value);
+    setIsOpen(false);
+  };
+  
+  const selectedOption = options.find(option => option.value === value) || options[0];
+  
+  return (
+    <div className={`relative ${className}`} ref={dropdownRef}>
+      <button
+        type="button"
+        className="flex items-center justify-between w-full text-sm text-gray-600 bg-[#f8f6f3] appearance-none focus:outline-none"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span>{selectedOption.label}</span>
+        <svg className="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20">
+          <path
+            fillRule="evenodd"
+            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+            clipRule="evenodd"
+          />
+        </svg>
+      </button>
+      
+      {isOpen && (
+        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 shadow-lg rounded text-sm">
+          {options.map((option) => (
+            <div
+              key={option.value}
+              className={`px-3 py-1.5 cursor-pointer hover:bg-gray-100 ${
+                option.value === value ? 'bg-blue-500 text-white' : 'text-gray-700'
+              }`}
+              onClick={() => handleOptionClick(option)}
+            >
+              {option.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Shop = () => {
   const [products, setProducts] = useState([]);
@@ -16,14 +78,14 @@ const Shop = () => {
   const [sortOption, setSortOption] = useState('default');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalProducts, setTotalProducts] = useState(0);
   const [showFilters, setShowFilters] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [productsPerPage, setProductsPerPage] = useState(9);
   
   const location = useLocation();
   const navigate = useNavigate();
   const { addToCart } = useCart();
-  
-  const productsPerPage = 9;
   
   // Parse URL search params
   const searchParams = new URLSearchParams(location.search);
@@ -32,6 +94,7 @@ const Shop = () => {
   const maxPriceParam = searchParams.get('maxPrice');
   const pageParam = searchParams.get('page');
   const queryParam = searchParams.get('q');
+  const limitParam = searchParams.get('limit');
   
   useEffect(() => {
     // Set initial values from URL params
@@ -48,6 +111,10 @@ const Shop = () => {
 
     if (queryParam) {
       setSearchQuery(queryParam);
+    }
+    
+    if (limitParam) {
+      setProductsPerPage(parseInt(limitParam, 10));
     }
     
     // Fetch categories
@@ -85,9 +152,48 @@ const Shop = () => {
         params.set('page', currentPage.toString());
       }
       
-      params.set('limit', productsPerPage.toString());
+      if (params.get('limit') === 'all') {
+        params.delete('limit');
+      } else if (!params.has('limit')) {
+        params.set('limit', productsPerPage.toString());
+      }
       
       const requestUrl = `${API_ENDPOINTS.PRODUCTS}?${params.toString()}`;
+      console.log('Fetching products from:', requestUrl);
+      
+      // If we're checking page 1, also check the total count
+      if (params.get('page') === '1' || !params.has('page')) {
+        try {
+          // Create a URL for getting all products (to count them)
+          const countParams = new URLSearchParams();
+          if (params.has('category')) countParams.set('category', params.get('category'));
+          if (params.has('minPrice')) countParams.set('minPrice', params.get('minPrice'));
+          if (params.has('maxPrice')) countParams.set('maxPrice', params.get('maxPrice'));
+          if (params.has('q')) countParams.set('q', params.get('q'));
+          
+          const countUrl = `${API_ENDPOINTS.PRODUCTS}?${countParams.toString()}`;
+          const countResponse = await fetch(countUrl);
+          
+          if (countResponse.ok) {
+            const countData = await countResponse.json();
+            if (countData.data && countData.data.products) {
+              const actualCount = countData.data.products.length;
+              setTotalProducts(actualCount);
+              console.log('Actual total product count:', actualCount);
+              
+              // Calculate pages based on actual count
+              const currentLimit = parseInt(params.get('limit') || productsPerPage);
+              const actualPages = Math.ceil(actualCount / currentLimit);
+              setTotalPages(actualPages);
+              console.log('Total pages based on actual count:', actualPages);
+            }
+          }
+        } catch (countErr) {
+          console.error('Error getting total count:', countErr);
+        }
+      }
+      
+      // Continue with the paginated request
       const response = await fetch(requestUrl);
       
       if (!response.ok) {
@@ -95,10 +201,22 @@ const Shop = () => {
       }
       
       const data = await response.json();
+      console.log('Products API response:', data);
       
       if (data.data) {
-        setProducts(data.data.products || []);
-        setTotalPages(data.data.totalPages || 1);
+        const productsList = data.data.products || [];
+        setProducts(productsList);
+        console.log('Products set:', productsList.length, 'products');
+        
+        // Handle pagination information
+        const pagination = data.pagination || data.data.pagination;
+        const hasMore = pagination?.hasMore || false;
+        
+        // Use the hasMore flag to ensure we have proper pagination
+        if (hasMore && totalPages <= currentPage) {
+          setTotalPages(currentPage + 1);
+          console.log('Adjusting to at least', currentPage + 1, 'pages because hasMore is true');
+        }
       }
     } catch (err) {
       console.error('Error fetching products:', err);
@@ -147,13 +265,34 @@ const Shop = () => {
   };
   
   const handlePageChange = (page) => {
+    if (page === currentPage) return; // Don't reload if already on this page
+    
     const params = new URLSearchParams(location.search);
     params.set('page', page.toString());
-    navigate(`${location.pathname}?${params.toString()}`);
+    
+    // Update URL and trigger page reload
+    const newUrl = `${location.pathname}?${params.toString()}`;
+    navigate(newUrl);
+    
+    // Force state update
     setCurrentPage(page);
     
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  
+  const handleProductsPerPageChange = (limit) => {
+    const params = new URLSearchParams(location.search);
+    
+    if (limit === 'all') {
+      params.set('limit', 'all');
+    } else {
+      params.set('limit', limit.toString());
+      setProductsPerPage(parseInt(limit, 10));
+    }
+    
+    params.set('page', '1');
+    navigate(`${location.pathname}?${params.toString()}`);
   };
   
   const handleAddToCart = (product) => {
@@ -202,6 +341,19 @@ const Shop = () => {
     return stars;
   };
   
+  const sortOptions = [
+    { value: 'default', label: 'Default sorting' },
+    { value: 'price-low', label: 'Price: Low to High' },
+    { value: 'price-high', label: 'Price: High to Low' },
+    { value: 'name-asc', label: 'Name: A to Z' },
+    { value: 'name-desc', label: 'Name: Z to A' },
+  ];
+  
+  const handleSortChange = (value) => {
+    setSortOption(value);
+    // Implement any additional sorting logic if needed
+  };
+  
   return (
     <div className="bg-[#f8f6f3] min-h-screen">
       <div className="container mx-auto px-4 py-8">
@@ -209,7 +361,7 @@ const Shop = () => {
         <div className="pt-4 mb-8">
           <div className="flex items-center justify-between">
             <p className="text-gray-600">
-              {products.length} products found
+              {products.length > 0 ? `${totalProducts} products found` : 'No products found'}
             </p>
             <button 
               onClick={toggleFilters}
@@ -265,7 +417,7 @@ const Shop = () => {
               categories={categories}
               selectedCategory={categoryParam}
               onCategoryChange={handleCategoryFilter}
-              totalProducts={products.length}
+              totalProducts={totalProducts}
             />
           </div>
           
@@ -300,24 +452,45 @@ const Shop = () => {
             {/* Sorting Options */}
             <div className="flex flex-col md:flex-row justify-between items-center mb-6">
               <div className="text-gray-600 mb-3 md:mb-0">
-                Showing {(currentPage - 1) * productsPerPage + 1}–{Math.min(currentPage * productsPerPage, products.length)} of {products.length} results
+                {products.length > 0 ? (
+                  <>
+                    {limitParam === 'all' ? (
+                      <>Showing all {totalProducts} products</>
+                    ) : (
+                      <>
+                        Showing {Math.max(1, (currentPage - 1) * parseInt(limitParam || productsPerPage) + 1)}–
+                        {Math.min(currentPage * parseInt(limitParam || productsPerPage), totalProducts)} of {totalProducts} results
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <>No products found</>
+                )}
               </div>
-              <div className="relative">
-                <select 
+              <div className="flex items-center space-x-4">
+                <CustomDropdown
+                  options={sortOptions}
                   value={sortOption}
-                  onChange={(e) => setSortOption(e.target.value)}
-                  className="appearance-none bg-transparent pl-0 pr-8 py-0 border-0 text-gray-600 focus:outline-none focus:ring-0"
-                >
-                  <option value="default">Default sorting</option>
-                  <option value="price-low">Price: Low to High</option>
-                  <option value="price-high">Price: High to Low</option>
-                  <option value="name-asc">Name: A to Z</option>
-                  <option value="name-desc">Name: Z to A</option>
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-0 text-gray-600">
-                  <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                    <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                  </svg>
+                  onChange={handleSortChange}
+                  className="w-40"
+                />
+                
+                <div className="relative">
+                  <select 
+                    value={limitParam || productsPerPage}
+                    onChange={(e) => handleProductsPerPageChange(e.target.value)}
+                    className="appearance-none bg-[#f8f6f3] pl-3 pr-8 py-1.5 border border-gray-300 rounded text-sm text-gray-600 focus:outline-none focus:ring-1 focus:ring-[#9bc948]"
+                  >
+                    <option value="9">Show 9</option>
+                    <option value="12">Show 12</option>
+                    <option value="24">Show 24</option>
+                    <option value="all">Show all</option>
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-gray-600">
+                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                      <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                    </svg>
+                  </div>
                 </div>
               </div>
             </div>
@@ -353,47 +526,36 @@ const Shop = () => {
             )}
             
             {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="mt-8 flex justify-center">
-                <div className="flex space-x-1">
-                  <button 
-                    onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                    className={`px-4 py-2 rounded-md ${
-                      currentPage === 1 
-                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
-                        : 'bg-white text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    Previous
-                  </button>
+            {limitParam !== 'all' && (
+              <div className="mt-10 flex justify-start">
+                <nav className="flex items-center space-x-2">
+                  {Array.from({ length: Math.max(1, totalPages) }, (_, i) => i + 1)
+                    .map(page => (
+                      <button
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        className={`w-12 h-12 flex items-center justify-center text-lg font-medium transition-colors duration-150 ${
+                          currentPage === page
+                            ? 'bg-[#9bc948] text-white' 
+                            : 'bg-white border border-[#9bc948] text-[#9bc948] hover:bg-gray-50'
+                        }`}
+                        aria-label={`Page ${page}`}
+                        aria-current={currentPage === page ? 'page' : undefined}
+                      >
+                        {page}
+                      </button>
+                    ))}
                   
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                    <button
-                      key={page}
-                      onClick={() => handlePageChange(page)}
-                      className={`w-10 h-10 rounded-md ${
-                        currentPage === page
-                          ? 'bg-[#9bc948] text-white' 
-                          : 'bg-white text-gray-700 hover:bg-gray-50'
-                      }`}
+                  {currentPage < totalPages && (
+                    <button 
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      className="w-12 h-12 flex items-center justify-center bg-white border border-[#9bc948] text-[#9bc948] hover:bg-gray-50 transition-colors duration-150"
+                      aria-label="Next page"
                     >
-                      {page}
+                      →
                     </button>
-                  ))}
-                  
-                  <button 
-                    onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
-                    className={`px-4 py-2 rounded-md ${
-                      currentPage === totalPages 
-                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
-                        : 'bg-white text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    Next
-                  </button>
-                </div>
+                  )}
+                </nav>
               </div>
             )}
           </div>
