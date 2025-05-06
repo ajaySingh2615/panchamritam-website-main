@@ -34,15 +34,6 @@
   transform: scale(1.05);
 }
 
-/* Line clamp for product titles - prevents uneven heights */
-.product-title {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  height: 2.6em; /* Fixed height for 2 lines of text */
-}
-
 /* Sale badge */
 .sale-badge {
   position: absolute;

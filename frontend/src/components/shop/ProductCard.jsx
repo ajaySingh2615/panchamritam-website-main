@@ -8,37 +8,6 @@ const ProductCard = ({ product, onAddToCart }) => {
     return isNaN(numericPrice) ? '0.00' : numericPrice.toFixed(2);
   };
 
-  // Generate star ratings
-  const renderStarRating = (rating) => {
-    const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 >= 0.5;
-    
-    for (let i = 0; i < 5; i++) {
-      if (i < fullStars) {
-        stars.push(
-          <svg key={i} className="w-4 h-4 text-yellow-500 fill-current" viewBox="0 0 24 24">
-            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path>
-          </svg>
-        );
-      } else if (i === fullStars && hasHalfStar) {
-        stars.push(
-          <svg key={i} className="w-4 h-4 text-yellow-500 fill-current" viewBox="0 0 24 24">
-            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" fillOpacity="0.5"></path>
-          </svg>
-        );
-      } else {
-        stars.push(
-          <svg key={i} className="w-4 h-4 text-gray-300 fill-current" viewBox="0 0 24 24">
-            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path>
-          </svg>
-        );
-      }
-    }
-    
-    return stars;
-  };
-
   const handleAddToCart = (e) => {
     e.preventDefault();
     if (onAddToCart) {
@@ -49,7 +18,7 @@ const ProductCard = ({ product, onAddToCart }) => {
   const isOnSale = product.regular_price && parseFloat(product.regular_price) > parseFloat(product.price);
 
   return (
-    <div className="product-card bg-[#f8f6f3] rounded-lg overflow-hidden group relative">
+    <div className="product-card bg-[#f8f6f3] rounded-lg shadow-md overflow-hidden group relative">
       {/* Sale badge */}
       {isOnSale && <div className="sale-badge">Sale!</div>}
       
@@ -73,13 +42,9 @@ const ProductCard = ({ product, onAddToCart }) => {
             {product.category_name || 'Uncategorized'}
           </div>
           
-          <h3 className="product-title text-gray-800 font-bold text-lg mb-2 group-hover:text-[#9bc948] transition duration-300">
+          <h3 className="text-gray-800 font-bold text-lg mb-3 hover:text-[#9bc948] transition duration-300">
             {product.name}
           </h3>
-          
-          <div className="flex items-center mb-3">
-            {renderStarRating(product.rating || 0)}
-          </div>
         </Link>
         
         <div className="flex justify-between items-center">
