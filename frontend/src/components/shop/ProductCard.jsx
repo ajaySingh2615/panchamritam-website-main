@@ -49,7 +49,7 @@ const ProductCard = ({ product, onAddToCart }) => {
   const isOnSale = product.regular_price && parseFloat(product.regular_price) > parseFloat(product.price);
 
   return (
-    <div className="product-card bg-[#f8f6f3] rounded-lg shadow-md overflow-hidden group relative">
+    <div className="product-card bg-[#f8f6f3] rounded-lg overflow-hidden group relative">
       {/* Sale badge */}
       {isOnSale && <div className="sale-badge">Sale!</div>}
       
