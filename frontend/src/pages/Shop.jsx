@@ -86,6 +86,8 @@ const Shop = () => {
   const [totalProducts, setTotalProducts] = useState(0);
   const [showFilters, setShowFilters] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+  const searchDebounceTimerRef = useRef(null);
   const [productsPerPage, setProductsPerPage] = useState(9);
   
   const location = useLocation();
@@ -116,6 +118,7 @@ const Shop = () => {
 
     if (queryParam) {
       setSearchQuery(queryParam);
+      setDebouncedSearchQuery(queryParam);
     }
     
     if (limitParam) {
@@ -128,6 +131,42 @@ const Shop = () => {
     // Fetch products
     fetchProducts();
   }, [location.search]);
+  
+  // Debounce search query updates
+  useEffect(() => {
+    // Clear any existing timer
+    if (searchDebounceTimerRef.current) {
+      clearTimeout(searchDebounceTimerRef.current);
+    }
+    
+    // Set a new timer
+    searchDebounceTimerRef.current = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+      
+      // Update URL with search query, but only if it's not empty
+      // and different from the current query parameter
+      if (searchQuery !== queryParam) {
+        const params = new URLSearchParams(location.search);
+        
+        if (searchQuery.trim()) {
+          params.set('q', searchQuery);
+        } else {
+          params.delete('q');
+        }
+        
+        // Reset to page 1 when searching
+        params.set('page', '1');
+        navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+      }
+    }, 500); // 500ms debounce delay
+    
+    // Cleanup function to clear timer if component unmounts or searchQuery changes
+    return () => {
+      if (searchDebounceTimerRef.current) {
+        clearTimeout(searchDebounceTimerRef.current);
+      }
+    };
+  }, [searchQuery]);
   
   const fetchCategories = async () => {
     try {
@@ -254,8 +293,25 @@ const Shop = () => {
     navigate(`${location.pathname}?${params.toString()}`);
   };
 
-  const handleSearch = (e) => {
+  // Handle search input change - now this immediately updates state for live search
+  const handleSearchInputChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  // Handle clear search
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    setDebouncedSearchQuery('');
+    const params = new URLSearchParams(location.search);
+    params.delete('q');
+    navigate(`${location.pathname}?${params.toString()}`);
+  };
+
+  // Search form submission - now optional since we have live search
+  const handleSearchSubmit = (e) => {
     e.preventDefault();
+    // Force immediate update without waiting for debounce
+    setDebouncedSearchQuery(searchQuery);
     
     const params = new URLSearchParams(location.search);
     
@@ -268,6 +324,31 @@ const Shop = () => {
     params.set('page', '1');
     navigate(`${location.pathname}?${params.toString()}`);
   };
+
+  // Search function to filter products by query
+  const searchProducts = (products, query) => {
+    if (!query || !query.trim()) return products;
+    
+    const searchTerms = query.toLowerCase().trim().split(' ').filter(term => term.length > 0);
+    
+    return products.filter(product => {
+      // Search in different product fields
+      const searchableText = [
+        product.name || '',
+        product.description || '',
+        product.category_name || '',
+        product.brand || ''
+      ].join(' ').toLowerCase();
+      
+      // Check if ALL search terms exist in the product's searchable text
+      return searchTerms.every(term => searchableText.includes(term));
+    });
+  };
+
+  // Apply search filter to sorted products using the debounced query
+  const filteredProducts = debouncedSearchQuery 
+    ? searchProducts(products, debouncedSearchQuery)
+    : products;
   
   const handlePageChange = (page) => {
     if (page === currentPage) return; // Don't reload if already on this page
@@ -356,8 +437,46 @@ const Shop = () => {
   
   const handleSortChange = (value) => {
     setSortOption(value);
-    // Implement any additional sorting logic if needed
+
+    // Update URL with sort parameter
+    const params = new URLSearchParams(location.search);
+    params.set('sort', value);
+    navigate(`${location.pathname}?${params.toString()}`);
   };
+
+  // Sort products based on selected option
+  const getSortedProducts = () => {
+    if (!products || products.length === 0) return [];
+
+    const productsCopy = [...products];
+
+    switch (sortOption) {
+      case 'price-low':
+        return productsCopy.sort((a, b) => 
+          parseFloat(a.price || 0) - parseFloat(b.price || 0)
+        );
+      case 'price-high':
+        return productsCopy.sort((a, b) => 
+          parseFloat(b.price || 0) - parseFloat(a.price || 0)
+        );
+      case 'name-asc':
+        return productsCopy.sort((a, b) => 
+          (a.name || '').localeCompare(b.name || '')
+        );
+      case 'name-desc':
+        return productsCopy.sort((a, b) => 
+          (b.name || '').localeCompare(a.name || '')
+        );
+      case 'default':
+      default:
+        // Default sorting - you can define what this means for your shop
+        // Often it's by newest or featured products
+        return productsCopy;
+    }
+  };
+
+  // Get sorted products
+  const sortedProducts = getSortedProducts();
   
   return (
     <div className="bg-[#f8f6f3] min-h-screen">
@@ -385,23 +504,49 @@ const Shop = () => {
           <div className={`w-full lg:w-1/4 ${showFilters ? 'block' : 'hidden lg:block'} lg:border-r lg:border-gray-300 lg:pr-6`}>
             {/* Search Box */}
             <div className="mb-6">
-              <form onSubmit={handleSearch} className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-l focus:outline-none focus:ring-1 focus:ring-[#9bc948]"
-                />
+              <form onSubmit={handleSearchSubmit} className="flex gap-2">
+                <div className="relative flex-grow">
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    value={searchQuery}
+                    onChange={handleSearchInputChange}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-l focus:outline-none focus:ring-1 focus:ring-[#9bc948]"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={handleClearSearch}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
                 <button
                   type="submit"
-                  className="bg-[#9bc948] text-white px-3 py-2 rounded-r hover:bg-[#8ab938] transition duration-300"
+                  className="bg-[#9bc948] text-white px-3 py-2 rounded-r hover:bg-[#8ab938] transition duration-300 flex items-center justify-center"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </button>
               </form>
+              {debouncedSearchQuery && (
+                <div className="mt-2 text-sm">
+                  <span className="text-gray-600">
+                    {filteredProducts.length} results for "{debouncedSearchQuery}"
+                  </span>
+                  <button 
+                    onClick={handleClearSearch} 
+                    className="ml-2 text-[#9bc948] hover:text-[#8ab938] focus:outline-none"
+                  >
+                    Clear
+                  </button>
+                </div>
+              )}
             </div>
             
             <div className="bg-[#f8f6f3] rounded pl-0 pr-5 pt-5 pb-5 mb-2 text-left">
@@ -508,20 +653,25 @@ const Shop = () => {
               <div className="bg-red-100 p-4 rounded-md text-red-700 mb-6">
                 {error}
               </div>
-            ) : products.length === 0 ? (
+            ) : filteredProducts.length === 0 ? (
               <div className="bg-white p-8 rounded-lg shadow-md text-center">
                 <h3 className="text-xl font-bold text-gray-800 mb-2">No products found</h3>
-                <p className="text-gray-600 mb-4">Try adjusting your filters or search criteria.</p>
+                <p className="text-gray-600 mb-4">
+                  {debouncedSearchQuery ? 
+                    `No results found for "${debouncedSearchQuery}". Try different keywords or` : 
+                    "Try adjusting your filters or"
+                  }
+                </p>
                 <button 
                   onClick={() => navigate('/shop')}
-                  className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition duration-300"
+                  className="bg-[#9bc948] text-white px-4 py-2 rounded-md hover:bg-[#8ab938] transition duration-300"
                 >
                   Reset Filters
                 </button>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {products.map(product => (
+                {filteredProducts.map(product => (
                   <ProductCard 
                     key={product.product_id}
                     product={product}

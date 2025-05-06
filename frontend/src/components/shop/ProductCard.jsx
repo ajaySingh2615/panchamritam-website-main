@@ -72,15 +72,15 @@ const ProductCard = ({ product, onAddToCart }) => {
             {isOnSale ? (
               <div className="flex items-center">
                 <span className="text-gray-400 line-through text-sm mr-2">
-                  £{formatPrice(product.regular_price)}
+                  ₹{formatPrice(product.regular_price)}
                 </span>
                 <span className="text-[#9bc948] font-bold text-lg">
-                  £{formatPrice(product.price)}
+                  ₹{formatPrice(product.price)}
                 </span>
               </div>
             ) : (
               <span className="text-[#9bc948] font-bold text-lg">
-                £{formatPrice(product.price)}
+                ₹{formatPrice(product.price)}
               </span>
             )}
           </div>
