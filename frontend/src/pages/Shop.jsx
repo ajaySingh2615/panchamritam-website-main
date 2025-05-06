@@ -52,17 +52,22 @@ const CustomDropdown = ({ options, value, onChange, className }) => {
       
       {isOpen && (
         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 shadow-lg rounded text-sm">
-          {options.map((option) => (
-            <div
-              key={option.value}
-              className={`px-3 py-1.5 cursor-pointer hover:bg-gray-100 ${
-                option.value === value ? 'bg-blue-500 text-white' : 'text-gray-700'
-              }`}
-              onClick={() => handleOptionClick(option)}
-            >
-              {option.label}
-            </div>
-          ))}
+          {options.map((option) => {
+            const isSelected = option.value === value;
+            return (
+              <div
+                key={option.value}
+                className={`px-3 py-1.5 cursor-pointer ${
+                  isSelected 
+                    ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+                onClick={() => handleOptionClick(option)}
+              >
+                {option.label}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
